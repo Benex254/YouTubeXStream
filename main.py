@@ -1,6 +1,6 @@
 import os
 os.environ["KIVY_VIDEO"] = "ffpyplayer"
-# os.environ["KIVY_NO_CONSOLELOG"] = "1"
+os.environ["KIVY_NO_CONSOLELOG"] = "1"
 from kivy.config import Config
 # Config.set("log_enable")
 from difflib import SequenceMatcher

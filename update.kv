@@ -1,0 +1,22 @@
+MDScreen:
+    name:"video_screen"
+    MDBoxLayout:
+        orientation: 'vertical'
+        md_bg_color: self.theme_cls.backgroundColor
+        MDTopAppBar:
+            id:v_app_bar
+            type: "small" 
+            size_hint_x: .95 
+            theme_color:"custom"
+            pos_hint: {"center_x": .5} 
+            MDTopAppBarLeadingButtonContainer:
+                MDActionTopAppBarButton:
+                    icon: "menu"
+                    on_press: 
+                        root.sm.current = "main_screen"
+            MDTopAppBarTitle:
+                text: "YouTubeXStream"
+                pos_hint:{"center_x":.5}
+            MDTopAppBarTrailingButtonContainer:
+                MDActionTopAppBarButton:
+                    icon: "account-circle"

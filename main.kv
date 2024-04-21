@@ -1,0 +1,366 @@
+#: import FadeTransition kivy.uix.screenmanager.FadeTransition
+#: import os os
+<VideoCard>
+
+    spacing:"10dp"
+     
+    orientation: "vertical"if app.screen.ids.sm.width < 550 else "horizontal"
+    FitImage:
+        source: root.image_link
+        # adaptive_width:True
+        size_hint_y:None
+        # size_hint_x:1 if app.screen.ids.sm.width < 550 else .95
+        height:"200dp" if app.screen.ids.sm.width < 550 else "200dp"
+        pos_hint: {'center_y': 0.5}
+        # fit_mode: "fill" #options=["scale-down", "fill", "contain", "cover"]
+
+    MDBoxLayout:
+        orientation: 'vertical'
+        pos_hint: {"center_x":.5,'center_y': 0.5}
+        spacing:"20dp"
+        MDLabel:
+            text:root.title
+            color:self.theme_cls.primaryColor
+            adaptive_height:True
+            font_style:"Title"
+            role:"large"
+            pos_hint:{"top":1}
+        MDLabel:
+            text:root.desc
+            color:self.theme_cls.tertiaryColor
+            font_style:"Body"
+            role:"small"
+            pos_hint: {'top': 0}
+        MDBoxLayout:
+            spacing:"10dp"            
+            adaptive_height:True
+            pos_hint: {"center_x":.5,'center_y': 0.5}
+            MDLabel:
+                text: root.channel
+                color:self.theme_cls.secondaryColor
+                adaptive_height:True
+
+                font_style:"Label"
+                role:"small"
+            MDLabel:
+                font_style:"Label"
+                role:"small"
+                adaptive_height:True
+                halign:"right"
+                color:self.theme_cls.secondaryColor
+                text: root.publishedAt
+                
+    MDBoxLayout:
+        orientation:"horizontal" if app.screen.ids.sm.width < 550 else "vertical"
+        spacing:"100dp" if app.screen.ids.sm.width < 550 else "20dp"
+        pos_hint: {"center_x":.5,'center_y': 0.5}
+        adaptive_size:True
+        MDIconButton:
+            icon:"video"
+            on_press: app.show_video(f"{root.channel}_{root.title}")
+
+        MDIconButton:
+            icon:"download"
+            on_press:app.add_download_video_job(root.video_link,root.title,root.channel)
+
+    
+        MDIconButton:
+            icon:"link"            
+            on_press:app.open_video_link(root.video_link,root.title)
+    
+
+
+MDNavigationLayout:
+    sm:sm
+    ScreenManager:
+        transition: FadeTransition()
+        id:sm
+        
+        MDScreen:
+            name:"main_screen"
+            md_bg_color: self.theme_cls.backgroundColor
+
+            MDBoxLayout:
+                orientation: 'vertical'
+                spacing:"10dp"
+                MDTopAppBar:
+                    id:app_bar
+                    type: "small" 
+                    size_hint_x: .95 
+                    theme_color:"custom"
+                    md_bg_color:self.theme_cls.secondaryContainerColor
+                    pos_hint: {"center_x": .5, "center_y": .5} 
+                    MDTopAppBarLeadingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "menu"
+                            on_press:
+                                nav_drawer.set_state("toggle")
+                                number_of_downloads.text = str(len([path for path in os.listdir(app.VIDS_PATH ) if "mp4" in path]))
+                                
+                    MDTopAppBarTitle:
+                        text: "YouTubeXStream"
+                        pos_hint:{"center_x":.5}
+                    MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "account-circle"
+            
+                MDBoxLayout:
+                    id:search_paste
+                    orientation:"vertical" if root.sm.width < 550 else "horizontal"
+                    spacing:"20dp"
+                    padding:"10dp"
+                    size_hint_x:.95
+                    adaptive_height:True
+                    pos_hint:{"top":1,"center_x":.5}
+                    MDTextField:
+                        id:video_url
+                        mode:"outlined"
+                        size_hint_x:1
+                        # on_text_validate: app.search_for_video(self.text)
+                        pos_hint:{"center_y":.5,"center_x":.5}
+                        MDTextFieldHelperText:
+                            text:"paste youtube video url or search"
+                            mode:"persistent"
+                    MDButton:
+                        font_style:"filled"
+                        on_press: app.search_for_video(video_url.text)
+                        pos_hint:{"center_y":.5}
+                        size_hint_x:1
+
+                        MDButtonIcon:
+                            icon:"magnify"
+                        MDButtonText:
+                            text:"search"
+                SearchResults:
+                    id: rv
+                    viewclass: 'VideoCard'
+                    key_size: 'height'
+                    size_hint_x:.95
+                    spacing:"10dp"
+                    pos_hint:{"center_x":.5}
+                    padding:"10dp"
+                    RecycleBoxLayout:
+
+                        padding: dp(10)
+                        spacing: dp(10)
+                        # backgroundColor:[1,.5,.4]
+                        default_size: (None,"350dp") if root.sm.width < 550 else(None, dp(200))
+                        default_size_hint: (1,None)  if root.sm.width < 550 else (1, None) 
+                        pos_hint:{"center_x":.5}
+                        size_hint_y: None
+                        height:self.minimum_height
+                        orientation: "vertical" #if root.sm.width < 550 else "horizontal"
+                        
+                                                
+                MDBoxLayout:
+                    id:status_bar
+                    size_hint_y: None
+                    height: "30dp"
+                    spacing: "10dp"
+                    padding:"10dp"
+                    md_bg_color:self.theme_cls.secondaryContainerColor
+                    MDLabel:
+                        id:video_title
+                        text:"Try to download sth"
+                        font_style:"Label"
+                        markup:True
+                        role:"small"
+                        pos_hint: {'center_y': 0.5}
+                        adaptive_width:True
+                    MDLinearProgressIndicator:
+                        id:job_progress
+                        type:"determinate"
+                        size_hint_y:None
+                        height:"10dp"
+                        size_hint_x: .4
+                        value: 0
+                        pos_hint: {'center_y': 0.5}
+                        radius:[5]
+                    MDLabel:
+                        id:job_progress_label
+                        halign:"right"
+                        text: ""
+                        font_style:"Label"
+                        role:"small"
+                        pos_hint: {'center_y': 0.5}
+                        adaptive_width:True
+                    MDLabel:
+                        id:active_jobs
+                        halign:"right"
+                        font_style:"Label"
+                        role:"small"
+                        text: f"Jobs: {0}"
+                        pos_hint: {'center_y': 0.5}
+
+        MDScreen:
+            name:"video_screen"
+            MDBoxLayout:
+                orientation: 'vertical'
+                md_bg_color: self.theme_cls.backgroundColor
+                MDTopAppBar:
+                    id:v_app_bar
+                    type: "small" 
+                    size_hint_x: .95 
+                    theme_color:"custom"
+                    pos_hint: {"center_x": .5} 
+                    MDTopAppBarLeadingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "arrow-left-bold"
+                            on_press: 
+                                root.sm.current = "main_screen"
+                    MDTopAppBarTitle:
+                        text: "YouTubeXStream"
+                        pos_hint:{"center_x":.5}
+                    MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "account-circle"
+            
+
+                VideoPlayer:
+                    id:vid_player
+                    source:""
+                    
+        MDScreen:
+            name:"settings"
+            md_bg_color:self.theme_cls.backgroundColor
+
+            MDBoxLayout:
+                orientation: 'vertical'
+                md_bg_color: self.theme_cls.backgroundColor
+                MDTopAppBar:
+                    id:s_app_bar
+                    type: "small" 
+                    size_hint_x: .95 
+                    pos_hint: {"center_x": .5} 
+                    MDTopAppBarLeadingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "arrow-left-bold"
+                            on_press: 
+                                root.sm.current = "main_screen"
+                    MDTopAppBarTitle:
+                        text: "YouTubeXStream"
+                        pos_hint:{"center_x":.5}
+                    MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "account-circle"
+                MDLabel:
+                    text:"Settings"
+                    font_style:"Title"
+                    adaptive_height:True
+                    color:self.theme_cls.primaryColor
+                    size_hint_x:0.95
+                    pos_hint:{"center_x":.5}
+                    role:"large"
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    size_hint_x:0.95
+                    pos_hint:{"center_x":.5}
+                    MDBoxLayout:
+                        spacing:"10dp"    
+                        size_hint_y:1
+                        md_bg_color:self.theme_cls.secondaryContainerColor
+                        padding:"5dp"
+                        MDLabel:
+                            text:"choose your theme color"
+                            pos_hint:{"center_y":.5}                          
+                            adaptive_width:True
+                        MDDropDownItem:
+                            on_release: app.open_menu(self,"themeColor")
+                            pos_hint:{"center_y":.5}     
+                            size_hint_x:1                     
+
+                            MDDropDownItemText:
+                                pos_hint:{"center_x":.5}
+                                color:self.theme_cls.secondaryColor
+                                id: theme_color_chooser
+                                text: app.theme_cls.primary_palette    
+                    MDBoxLayout:
+                        spacing:"10dp"   
+                        md_bg_color:self.theme_cls.secondaryContainerColor
+                        padding:"5dp"
+                        MDLabel:
+                            text:"choose theme font_style:"
+                            adaptive_width:True   
+                            pos_hint:{"center_y":.5}    
+
+                        MDDropDownItem:
+                            on_release: app.open_menu(self,"themeStyle")
+                            pos_hint:{"center_y":.5}                          
+                            size_hint_x:1                     
+                            MDDropDownItemText:
+                                id: theme_style_chooser
+                                color:self.theme_cls.secondaryColor
+                                pos_hint:{"center_y":.5}                          
+
+                                text: app.theme_cls.theme_style   
+                    MDBoxLayout:
+                        spacing:"10dp"   
+                        md_bg_color:self.theme_cls.secondaryContainerColor
+                        padding:"5dp"
+                        MDLabel:
+                            text:"Start up query"
+                            adaptive_width:True   
+                            pos_hint:{"center_y":.5}                          
+                        MDTextField:
+                            size_hint_y:None
+                            type:"filled"
+                            text:app.startup_search
+                            height:"20dp"
+                            pos_hint:{"center_y":.5}                          
+                            on_text_validate:app.update_startup_search(self)
+
+                MDBoxLayout:                            
+
+    MDNavigationDrawer:
+        id: nav_drawer
+        radius: 0, dp(16), dp(16), 0
+        MDNavigationDrawerMenu:
+
+            MDNavigationDrawerLabel:
+                text: "YouTubeXStream "
+            MDNavigationDrawerDivider:                    
+
+            MDNavigationDrawerItem:
+                on_press:
+                    root.sm.current = "main_screen"
+                MDNavigationDrawerItemLeadingIcon:
+                    icon: "magnify"
+
+                MDNavigationDrawerItemText:
+                    text: "Search and download"
+
+                # MDNavigationDrawerItemTrailingText:
+                #     text: str(len(os.listdir(app.VIDS_PATH)))
+
+            MDNavigationDrawerItem:
+                on_press: app.show_vids_folder()
+                MDNavigationDrawerItemLeadingIcon:
+                    icon: "download"
+
+                MDNavigationDrawerItemText:
+                    text: "Your Downloads"
+
+                MDNavigationDrawerItemTrailingText:
+                    id:number_of_downloads
+                    text: str(len([path for path in os.listdir(app.VIDS_PATH ) if "mp4" in path]))
+
+            MDNavigationDrawerItem:
+                on_press: 
+                    root.sm.current = "video_screen"
+                MDNavigationDrawerItemLeadingIcon:
+                    icon: "video"
+
+                MDNavigationDrawerItemText:
+                    text: "Watch"
+
+                # MDNavigationDrawerItemTrailingText:
+                #     text: str(len(os.listdir(app.VIDS_PATH)))
+            MDNavigationDrawerDivider:                    
+            MDNavigationDrawerItem:
+                on_press: 
+                    root.sm.current = "settings"
+                MDNavigationDrawerItemLeadingIcon:
+                    icon: "cog"
+
+                MDNavigationDrawerItemText:
+                    text: "settings"

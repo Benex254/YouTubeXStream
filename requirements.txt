@@ -1,0 +1,6 @@
+https://github.com/kivymd/KivyMD/archive/master.zip
+kivy[full]
+pytube
+python-youtube
+ffpyplayer
+pyinstaller

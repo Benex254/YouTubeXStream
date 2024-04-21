@@ -87,8 +87,6 @@ MDNavigationLayout:
                     id:app_bar
                     type: "small" 
                     size_hint_x: .95 
-                    theme_color:"custom"
-                    md_bg_color:self.theme_cls.secondaryContainerColor
                     pos_hint: {"center_x": .5, "center_y": .5} 
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
@@ -216,9 +214,10 @@ MDNavigationLayout:
                             icon: "account-circle"
             
 
-                VideoPlayer:
+                VideoPlayerCustom:
                     id:vid_player
-                    source:""
+
+
                     
         MDScreen:
             name:"settings"
@@ -261,53 +260,89 @@ MDNavigationLayout:
                         md_bg_color:self.theme_cls.secondaryContainerColor
                         padding:"5dp"
                         MDLabel:
-                            text:"choose your theme color"
-                            pos_hint:{"center_y":.5}                          
+                            text:"Theme Color"
+                            pos_hint:{"center_y":.5} 
+                            style:"Label"
+                            role:"large"                         
+                            color:self.theme_cls.secondaryColor
                             adaptive_width:True
                         MDDropDownItem:
                             on_release: app.open_menu(self,"themeColor")
                             pos_hint:{"center_y":.5}     
                             size_hint_x:1                     
-
+                            theme_color:"custom"
                             MDDropDownItemText:
+                                size_hint_x:1                     
                                 pos_hint:{"center_x":.5}
-                                color:self.theme_cls.secondaryColor
                                 id: theme_color_chooser
                                 text: app.theme_cls.primary_palette    
+                                style:"Label"
+                                role:"large"
+                                halign:"center"
+                                theme_color:"custom"
+                                md_bg_color:self.theme_cls.secondaryColor
                     MDBoxLayout:
                         spacing:"10dp"   
                         md_bg_color:self.theme_cls.secondaryContainerColor
                         padding:"5dp"
                         MDLabel:
-                            text:"choose theme font_style:"
+                            text:"Theme Style"
                             adaptive_width:True   
-                            pos_hint:{"center_y":.5}    
-
+                            pos_hint:{"center_y":.5}   
+                            style:"Label"
+                            role:"large" 
                         MDDropDownItem:
                             on_release: app.open_menu(self,"themeStyle")
                             pos_hint:{"center_y":.5}                          
-                            size_hint_x:1                     
+                            size_hint_x:1    
+                            # md_bg_color:self.theme_cls.secondaryContainerColor                 
                             MDDropDownItemText:
                                 id: theme_style_chooser
+                                size_hint_x:1                     
                                 color:self.theme_cls.secondaryColor
                                 pos_hint:{"center_y":.5}                          
-
+                                style:"Label"
+                                role:"large"
+                                halign:"center"
+                                theme_color:"custom"
+                                md_bg_color:self.theme_cls.secondaryColor
                                 text: app.theme_cls.theme_style   
                     MDBoxLayout:
                         spacing:"10dp"   
                         md_bg_color:self.theme_cls.secondaryContainerColor
                         padding:"5dp"
                         MDLabel:
+                            color:self.theme_cls.secondaryColor
                             text:"Start up query"
                             adaptive_width:True   
-                            pos_hint:{"center_y":.5}                          
+                            pos_hint:{"center_y":.5}  
+                            style:"Label"
+                            role:"large"
                         MDTextField:
                             size_hint_y:None
                             type:"filled"
                             text:app.startup_search
+                            color:self.theme_cls.secondaryColor
+
                             height:"20dp"
-                            pos_hint:{"center_y":.5}                          
+                            pos_hint:{"center_y":.5}   
+                            halign:"center"                       
                             on_text_validate:app.update_startup_search(self)
+                    MDBoxLayout:
+                        spacing:"10dp"   
+                        md_bg_color:self.theme_cls.secondaryContainerColor
+                        padding:"5dp"
+                        MDLabel:
+                            text:"Auto Next Video"
+                            color:self.theme_cls.secondaryColor
+                            pos_hint:{"center_y":.5}  
+                            style:"Label"
+                            size_hint_x:1
+                            role:"large"
+                        MDSwitch:
+                            pos_hint:{"center_y":.5}   
+                            active:app._next_video                      
+                            on_active:app.update_next_video(self)
 
                 MDBoxLayout:                            
 
@@ -329,9 +364,6 @@ MDNavigationLayout:
                 MDNavigationDrawerItemText:
                     text: "Search and download"
 
-                # MDNavigationDrawerItemTrailingText:
-                #     text: str(len(os.listdir(app.VIDS_PATH)))
-
             MDNavigationDrawerItem:
                 on_press: app.show_vids_folder()
                 MDNavigationDrawerItemLeadingIcon:
@@ -339,10 +371,9 @@ MDNavigationLayout:
 
                 MDNavigationDrawerItemText:
                     text: "Your Downloads"
-
                 MDNavigationDrawerItemTrailingText:
                     id:number_of_downloads
-                    text: str(len([path for path in os.listdir(app.VIDS_PATH ) if "mp4" in path]))
+                    text: str(len([path for path in os.listdir(app.VIDS_PATH ) if "mp4" in path])) if os.path.exists(app.VIDS_PATH) else "0"
 
             MDNavigationDrawerItem:
                 on_press: 
@@ -352,10 +383,8 @@ MDNavigationLayout:
 
                 MDNavigationDrawerItemText:
                     text: "Watch"
+            MDNavigationDrawerDivider:   
 
-                # MDNavigationDrawerItemTrailingText:
-                #     text: str(len(os.listdir(app.VIDS_PATH)))
-            MDNavigationDrawerDivider:                    
             MDNavigationDrawerItem:
                 on_press: 
                     root.sm.current = "settings"

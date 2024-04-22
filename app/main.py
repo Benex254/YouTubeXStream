@@ -17,6 +17,7 @@ from datetime import datetime
 import re
 import subprocess
 from kivymd.app import MDApp
+from kivymd.uix.dialog import MDDialog
 from kivymd.uix.snackbar import MDSnackbar,MDSnackbarText,MDSnackbarSupportingText,MDSnackbarButtonContainer,MDSnackbarCloseButton
 from kivymd.uix.recycleview import MDRecycleView
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -59,7 +60,10 @@ def check_for_updates():
                     # on_progress, req_body, req_headers, chunk_size,
                     # timeout, method, decode, debug, file_path, ca_file,
                     # verify)
-    req = UrlRequest("htttps://")
+    req = UrlRequest("https://")
+
+class UpdateDialog(MDDialog):
+    pass
 
 class VideoCard(MDBoxLayout):
     image_link = StringProperty("")
@@ -74,7 +78,10 @@ class VideoPlayerCustom(VideoPlayer):
     def _do_video_load(self,*largs):
         super()._do_video_load(*largs)
         self._video.bind(eos=self.next_video)
-        
+    # def u_text(self,video,texture):
+    #     app = MDApp.get_running_app()
+    #     app.screen.ids.img.texture = self._video.texture
+    #     print(self._video.texture,args)
     def next_video(self,instance,*args):
         app = MDApp.get_running_app()
         try:
@@ -112,6 +119,7 @@ class YouTubeApp(MDApp):
     stream = ObjectProperty()
     api = None
     is_online = BooleanProperty()
+    foundUpdate = BooleanProperty(False)
     def _isOnline(self,dt):
         self.is_online = self.isOnline()
     def isOnline(self):
@@ -193,10 +201,13 @@ class YouTubeApp(MDApp):
         worker_thread.start()
         Clock.schedule_interval(self._isOnline,5)
         self.is_online = self.isOnline()
+        self.search_for_video(self.startup_search)
         if not self.is_online:
             self.screen.ids.video_title.text = "[color=#ff0000]You are offline but you can still watch downloads[/color]"
             self.show_toast("Offline","Connect to the internet to search and download videos")
-            
+        else:
+            # Clock.schedule_once(lambda dt:self.check_for_updates())
+            pass
     def on_jobs(self,*args):
         if self.jobs == 0:
             pass
@@ -259,7 +270,6 @@ class YouTubeApp(MDApp):
             self._next_video = True
         self.theme_cls.primary_palette = color
         self.theme_cls.theme_style = style
-        self.search_for_video(self.startup_search)
         self.screen = Builder.load_file("./main.kv")
         self.title = "YouTubeXStream"
         return self.screen
@@ -408,6 +418,26 @@ class YouTubeApp(MDApp):
         except Exception as e:
             self.show_toast("Failed Settings Update",f"{e}")
 
+    def check_for_updates(self):
+        #req = UrlRequest(url, on_success, on_redirect, on_failure, on_error,
+                        # on_progress, req_body, req_headers, chunk_size,
+                        # timeout, method, decode, debug, file_path, ca_file,
+                        # verify)
+
+        req = UrlRequest("https://")
+        # def _check(dt):
+        self.foundUpdate = True
+        # Clock.schedule_once(_check,5)
+        print("checking........")
+    def on_foundUpdate(self,*args):
+        print("Doen :)",args)
+
+        self.stop()
+    def on_stop(self,*args):
+        print("Doen :)")
+        super().on_stop(*args)
+        print(*args)
+        os.execv(sys.executable,["python","update.py"])
 if __name__ == '__main__':
     try:
         if hasattr(sys, '_MEIPASS'):

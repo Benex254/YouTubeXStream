@@ -6,18 +6,13 @@ from kivymd.uix.snackbar import MDSnackbar,MDSnackbarText,MDSnackbarSupportingTe
 
 class UpdateApp(MDApp):
     def get_latest():
-        print("ppp")
 
     def check_for_updates(self):
         #req = UrlRequest(url, on_success, on_redirect, on_failure, on_error,
                         # on_progress, req_body, req_headers, chunk_size,
                         # timeout, method, decode, debug, file_path, ca_file,
                         # verify)
-        req = UrlRequest("https://api.github.com/repos/bxw-855/YouTubeXStream/realeases",on_success=lambda *args:print(args),
-        on_progress=lambda *args:print(args),
-        on_failure=lambda *args:print(args),
-        on_redirect=lambda *args:print(args),
-        )
+        req = UrlRequest("https://api.github.com/repos/bxw-855/YouTubeXStream/realeases")
     def show_toast(self,title,details):
         def _show(dt):
             MDSnackbar(
@@ -46,7 +41,6 @@ class UpdateApp(MDApp):
         self.user_data_path = self._get_user_data_dir()
         Clock.schedule_once(lambda x:self.show_toast("Search Tokens Depleted","You probably run out off search tokens\nbut you can still paste video links to download videos"),2)
         self.check_for_updates()
-        # print(req)
     def build(self):
         self.ui = Builder.load_file("update.kv")
         self.title = "YouTubeXstream"

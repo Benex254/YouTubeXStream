@@ -134,6 +134,7 @@ MDNavigationLayout:
                     viewclass: 'VideoCard'
                     key_size: 'height'
                     size_hint_x:.95
+                    size_hint_y:1
                     spacing:"10dp"
                     pos_hint:{"center_x":.5}
                     padding:"10dp"
@@ -142,7 +143,7 @@ MDNavigationLayout:
                         padding: dp(10)
                         spacing: dp(10)
                         # backgroundColor:[1,.5,.4]
-                        default_size: (None,"350dp") if root.sm.width < 550 else(None, dp(200))
+                        default_size: (None,400) if root.sm.width < 550 else(None, dp(200))
                         default_size_hint: (1,None)  if root.sm.width < 550 else (1, None) 
                         pos_hint:{"center_x":.5}
                         size_hint_y: None

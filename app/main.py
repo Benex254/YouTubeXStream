@@ -1,6 +1,8 @@
+from kivymd.icon_definitions import md_icons
+import sys
 import os
 os.environ["KIVY_VIDEO"] = "ffpyplayer"
-os.environ["KIVY_NO_CONSOLELOG"] = "1"
+# os.environ["KIVY_NO_CONSOLELOG"] = "1"
 from kivy.config import Config
 # Config.set("log_enable")
 from difflib import SequenceMatcher
@@ -29,13 +31,14 @@ from queue import Queue
 from pyyoutube import Api
 import random
 import tempfile 
+from kivy.resources import resource_add_path, resource_find
 
 # get default videos dir
 
 videos_dir = ""
-if platform == "Windows":
+if platform == "win":
     videos_dir = os.path.join(os.environ.get("USERPROFILE"),"Videos")
-elif platform == "Darwin":
+elif platform == "macosx":
     videos_dir = os.path.join(os.environ.get("HOME"),"Movies")
 else:
     videos_dir = os.path.join(os.environ.get("HOME"),"Videos")
@@ -78,7 +81,6 @@ class VideoPlayerCustom(VideoPlayer):
             user_settings = JsonStore("user_settings.json")
             next_video = user_settings.get("Video Preferences")["Auto_Next"] 
         except Exception as e:
-            print(e)
             next_video = True
         def _show(dt):
 
@@ -406,8 +408,13 @@ class YouTubeApp(MDApp):
         except Exception as e:
             self.show_toast("Failed Settings Update",f"{e}")
 
-if __name__ == "__main__":
-    YouTubeApp().run()
-
+if __name__ == '__main__':
+    try:
+        if hasattr(sys, '_MEIPASS'):
+            resource_add_path(os.path.join(sys._MEIPASS))
+        YouTubeApp().run()
+    except Exception as e:
+        print(e)
+        input("Press enter.")
 
 

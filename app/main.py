@@ -2,7 +2,7 @@ from kivymd.icon_definitions import md_icons
 import sys
 import os
 os.environ["KIVY_VIDEO"] = "ffpyplayer"
-# os.environ["KIVY_NO_CONSOLELOG"] = "1"
+os.environ["KIVY_NO_CONSOLELOG"] = "1"
 from kivy.config import Config
 # Config.set("log_enable")
 from difflib import SequenceMatcher
@@ -118,7 +118,7 @@ class YouTubeApp(MDApp):
     jobs = NumericProperty()
     stream = ObjectProperty()
     api = None
-    is_online = BooleanProperty()
+    is_online = BooleanProperty(False)
     foundUpdate = BooleanProperty(False)
     def _isOnline(self,dt):
         self.is_online = self.isOnline()
@@ -201,13 +201,13 @@ class YouTubeApp(MDApp):
         worker_thread.start()
         Clock.schedule_interval(self._isOnline,5)
         self.is_online = self.isOnline()
-        self.search_for_video(self.startup_search)
         if not self.is_online:
             self.screen.ids.video_title.text = "[color=#ff0000]You are offline but you can still watch downloads[/color]"
             self.show_toast("Offline","Connect to the internet to search and download videos")
         else:
+            self.search_for_video(self.startup_search)
             # Clock.schedule_once(lambda dt:self.check_for_updates())
-            pass
+
     def on_jobs(self,*args):
         if self.jobs == 0:
             pass
@@ -434,10 +434,10 @@ class YouTubeApp(MDApp):
 
         self.stop()
     def on_stop(self,*args):
-        print("Doen :)")
         super().on_stop(*args)
-        print(*args)
-        os.execv(sys.executable,["python","update.py"])
+        update = input("Update?(y/n)")
+        if update=="y":
+            os.execv(sys.executable,["python","updater.py"])
 if __name__ == '__main__':
     try:
         if hasattr(sys, '_MEIPASS'):

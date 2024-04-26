@@ -1,5 +1,8 @@
 #: import FadeTransition kivy.uix.screenmanager.FadeTransition
 #: import os os
+#: set app_name "YouTubeXStream"
+<MDTextFieldIcon@ButtonBehavior+MDTextFieldTrailingIcon>
+<MDLabelX>
 <VideoCard>
 
     spacing:"10dp"
@@ -57,7 +60,7 @@
         adaptive_size:True
         MDIconButton:
             icon:"video"
-            on_press: app.show_video(f"{root.channel}_{root.title}")
+            on_press: app.show_video(f"{root.channel}_{root.title}",root.video_link)
 
         MDIconButton:
             icon:"download"
@@ -96,7 +99,7 @@ MDNavigationLayout:
                                 number_of_downloads.text = str(len([path for path in os.listdir(app.VIDS_PATH ) if "mp4" in path]))
                                 
                     MDTopAppBarTitle:
-                        text: "YouTubeXStream"
+                        text: app_name
                         pos_hint:{"center_x":.5}
                     MDTopAppBarTrailingButtonContainer:
                         MDActionTopAppBarButton:
@@ -157,7 +160,7 @@ MDNavigationLayout:
                     height: "30dp"
                     spacing: "10dp"
                     padding:"10dp"
-                    md_bg_color:self.theme_cls.secondaryContainerColor
+                    md_bg_color:self.theme_cls.secondaryContainerColor if app.is_online else self.theme_cls.errorContainerColor
                     MDLabel:
                         id:video_title
                         text:"Try to download sth"
@@ -208,16 +211,56 @@ MDNavigationLayout:
                             on_press: 
                                 root.sm.current = "main_screen"
                     MDTopAppBarTitle:
-                        text: "YouTubeXStream"
+                        text: app_name
                         pos_hint:{"center_x":.5}
                     MDTopAppBarTrailingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "account-circle"
             
 
-                VideoPlayerCustom:
+                MDVideoPlayer:
                     id:vid_player
 
+        MDScreen:
+            name:"crashdump_screen"
+            MDBoxLayout:
+                orientation: 'vertical'
+                md_bg_color: self.theme_cls.backgroundColor
+                MDTopAppBar:
+                    id:v_app_bar
+                    type: "small" 
+                    size_hint_x: .95 
+                    theme_color:"custom"
+                    pos_hint: {"center_x": .5} 
+                    MDTopAppBarLeadingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "menu"
+                            on_press: nav_drawer.set_state("toggle")
+                                
+                    MDTopAppBarTitle:
+                        text: app_name
+                        pos_hint:{"center_x":.5}
+                    MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "account-circle"
+             
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    padding:"10dp"
+                    do_scroll_x: False
+                    do_scroll_y: True                    
+                    MDScrollView:
+                        size_hint_x:.95
+                        padding:"10dp"
+                        pos_hint: {'center_x': 0.5}                      
+                        MDLabel:                      
+                            allow_copy:True
+                            size_hint_y:None
+                            text:app.crash_text
+                            height:self.texture_size[1]
+                            allow_selection: True
+                            id:crash_report
+                            markup:True
 
                     
         MDScreen:
@@ -238,7 +281,7 @@ MDNavigationLayout:
                             on_press: 
                                 root.sm.current = "main_screen"
                     MDTopAppBarTitle:
-                        text: "YouTubeXStream"
+                        text: app_name
                         pos_hint:{"center_x":.5}
                     MDTopAppBarTrailingButtonContainer:
                         MDActionTopAppBarButton:
@@ -255,11 +298,15 @@ MDNavigationLayout:
                     orientation: 'vertical'
                     size_hint_x:0.95
                     pos_hint:{"center_x":.5}
+                    spacing:"10dp" 
+                    # adaptive_height:True  
                     MDBoxLayout:
                         spacing:"10dp"    
                         size_hint_y:1
                         md_bg_color:self.theme_cls.secondaryContainerColor
                         padding:"5dp"
+                        size_hint_y:None
+                        height:"80dp"                        
                         MDLabel:
                             text:"Theme Color"
                             pos_hint:{"center_y":.5} 
@@ -285,6 +332,8 @@ MDNavigationLayout:
                     MDBoxLayout:
                         spacing:"10dp"   
                         md_bg_color:self.theme_cls.secondaryContainerColor
+                        size_hint_y:None
+                        height:"80dp"
                         padding:"5dp"
                         MDLabel:
                             text:"Theme Style"
@@ -292,6 +341,7 @@ MDNavigationLayout:
                             pos_hint:{"center_y":.5}   
                             style:"Label"
                             role:"large" 
+                            
                         MDDropDownItem:
                             on_release: app.open_menu(self,"themeStyle")
                             pos_hint:{"center_y":.5}                          
@@ -312,6 +362,8 @@ MDNavigationLayout:
                         spacing:"10dp"   
                         md_bg_color:self.theme_cls.secondaryContainerColor
                         padding:"5dp"
+                        size_hint_y:None
+                        height:"80dp"                        
                         MDLabel:
                             color:self.theme_cls.secondaryColor
                             text:"Start up query"
@@ -321,18 +373,49 @@ MDNavigationLayout:
                             role:"large"
                         MDTextField:
                             size_hint_y:None
+                            height:"30dp"
                             type:"filled"
                             text:app.startup_search
-                            color:self.theme_cls.secondaryColor
+                            pos_hint:{"center_y":.5}  
 
-                            height:"20dp"
-                            pos_hint:{"center_y":.5}   
-                            halign:"center"                       
-                            on_text_validate:app.update_startup_search(self)
                     MDBoxLayout:
                         spacing:"10dp"   
                         md_bg_color:self.theme_cls.secondaryContainerColor
                         padding:"5dp"
+                        size_hint_y:None
+                        height:"80dp"                        
+                        MDLabel:
+                            color:self.theme_cls.secondaryColor
+                            text:"Api key"
+                            adaptive_width:True   
+                            pos_hint:{"center_y":.5}  
+                            style:"Label"
+                            role:"large"
+                        MDTextField:
+                            id:api_key
+                            size_hint_y:None
+                            type:"filled"
+                            text:app.api_key
+                            color:self.theme_cls.secondaryColor
+                            color:self.theme_cls.secondaryColor
+                            password:True
+
+                            height:"30dp"
+                            pos_hint:{"center_y":.5}   
+                            halign:"center"                       
+                            on_text_validate:app.update_api_key(self)
+                        MDIconButton:
+                            pos_hint:{"center_y":.5}  
+                            on_press:
+                                api_key.password = False if api_key.password else True
+                                self.icon = "eye" if api_key.password else "eye-off"
+                            icon: "eye"
+                    MDBoxLayout:
+                        spacing:"10dp"   
+                        md_bg_color:self.theme_cls.secondaryContainerColor
+                        padding:"5dp"
+                        size_hint_y:None
+                        height:"80dp"
                         MDLabel:
                             text:"Auto Next Video"
                             color:self.theme_cls.secondaryColor
@@ -345,7 +428,7 @@ MDNavigationLayout:
                             active:app._next_video                      
                             on_active:app.update_next_video(self)
 
-                MDBoxLayout:                            
+                    BoxLayout:                            
 
     MDNavigationDrawer:
         id: nav_drawer
@@ -353,7 +436,7 @@ MDNavigationLayout:
         MDNavigationDrawerMenu:
 
             MDNavigationDrawerLabel:
-                text: "YouTubeXStream "
+                text: app_name
             MDNavigationDrawerDivider:                    
 
             MDNavigationDrawerItem:
@@ -394,3 +477,11 @@ MDNavigationLayout:
 
                 MDNavigationDrawerItemText:
                     text: "settings"
+            MDNavigationDrawerItem:
+                on_press: 
+                    root.sm.current = "crashdump_screen"
+                MDNavigationDrawerItemLeadingIcon:
+                    icon: "bug"
+
+                MDNavigationDrawerItemText:
+                    text: "Crash Logs"

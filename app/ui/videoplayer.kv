@@ -1,0 +1,148 @@
+<MDLabelX@ButtonBehavior+MDLabel>
+
+<VideoPlayerX>
+    video:video
+    video_title:video_title
+    videos_dir:"C:/Users/bxavi/Videos/YoutubeX/"
+    media_controls:controls
+    MDVideo:
+        id:video
+        fit_mode:"cover"
+        options:{"auto_play":True}
+        pos_hint: {'center_x': 0.5,'center_y': 0.5}
+        on_eos: 
+            root.next_video()
+            play_btn.icon = "pause" if self.state == "play" else "play"
+        
+        on_position: 
+            slider.value = self.position/self.duration
+            _current_hours = int(self.position/3600)
+            _current_min = int((self.position/60-(_current_hours*60)))
+            _current_secs = int(self.position-(_current_min*60+_current_hours*3600))
+            current_time.text = f"{_current_hours}:{_current_min}:{_current_secs}"
+            slider_label.text = f"{_current_hours}:{_current_min}:{_current_secs}"
+            _rem_time = self.duration-self.position
+            _rem_hours = int(_rem_time/3600)
+            _rem_min = int((_rem_time/60-(_rem_hours*60)))
+            _rem_secs = int(_rem_time-(_rem_hours*3600+_rem_min*60))            
+            rem_time.text = f"{_rem_hours}:{_rem_min}:{_rem_secs}"
+    MediaControls:
+        id:controls
+        video_player:root
+        orientation: 'vertical'
+        size_hint_y: None
+        height: "100dp"
+        md_bg_color: [0,0,0,.4]
+        # opacity:.2
+        pos_hint: {'center_x': 0.5,'bottom': 1}
+        padding:"10dp"
+        spacing:"10dp"
+        MDBoxLayout:  
+            size_hint_y:.5
+            spacing:"10dp"
+            MDLabel:
+                id:current_time
+                text:"00:00:00"
+                font_style:"Label"
+                role:"small"
+                size_hint_x:.05
+                halign:"left"
+                pos_hint:{"center_y":.5}
+                adaptive_height:True
+            MDBoxLayout:
+                size_hint_x:.9
+                icon: "upda"
+                adaptive_height:True
+                pos_hint:{"center_y":.5}
+                MDVideoSlider:
+                    id:slider
+                    pos_hint: {'center_x': 0.5,'center_y': 0.5}
+                    value: 0
+                    max:1
+                    min:0
+                    size_hint_x:1
+                    video:video
+                    on_touch_move:
+                        if self.collide_point(*args[1].pos):\
+                        video.seek(self.value)
+                    on_touch_down:
+                        if self.collide_point(*args[1].pos):\
+                        self.value = args[1].pos[0]/self.width
+                        if self.collide_point(*args[1].pos):\
+                        video.seek(self.value)
+                            
+                    MDSliderHandle:
+
+                    MDSliderValueLabel:
+                        id:slider_label
+
+            MDLabel:
+                id:rem_time
+                text:"00:00:00"
+                size_hint_x:.05
+                halign:"right"
+                font_style:"Label"
+                role:"small"
+                pos_hint:{"center_y":.5}
+                adaptive_height:True
+        MDBoxLayout:
+            size_hint_y:.5
+            pos_hint: {'center_y': 0.5}
+            BoxLayout:
+                size_hint_x:.3
+                
+                MDLabelX:
+                    id:video_title
+                    text:root.title
+                    font_style:"Label"
+                    role:"medium"
+                    padding:"4dp"
+                    # md_bg_color:self.theme_cls.primaryColor
+                    border_radius:[4]
+                    shorten:True
+                    max_lines:2
+                    on_press:root.show_playlist(self)
+
+            MDBoxLayout:
+                adaptive_height:True
+                size_hint_x:.4
+                pos_hint: {'center_y': 0.5}
+                BoxLayout:
+                MDIconButton:
+                    icon:"shuffle"
+                    on_press:
+                        self.icon = "shuffle-disabled"                
+                MDIconButton:
+                    icon:"skip-previous"
+                    on_press:
+                        root.previous_video()
+                MDIconButton:
+                    id:play_btn
+                    icon:"play"
+                    on_press:
+                        self.icon = "play" if self.icon == "pause" else "pause"
+                        video.state = "pause" if self.icon == "play" else "play"
+
+                MDIconButton:
+                    icon:"skip-next" 
+                    on_press:
+                        root.next_video()           
+                MDIconButton:
+                    icon:"repeat"
+                    on_press: 
+                        self.icon = "repeat-off"
+                BoxLayout:
+            MDBoxLayout:
+                pos_hint: {'center_y': 0.5}
+                size_hint_x:.3
+                adaptive_height:True
+                BoxLayout:
+                MDIconButton:
+                    icon:"subtitles"            
+                MDIconButton:
+                    icon:"volume-high" 
+                    on_press:
+                        video.volume = 0 if video.volume else 1               
+                        self.icon = "volume-high" if video.volume else "volume-off"
+                MDIconButton:
+                    icon:"dots-vertical"                        

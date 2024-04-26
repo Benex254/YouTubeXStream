@@ -6,7 +6,7 @@ from kivymd.uix.snackbar import MDSnackbar,MDSnackbarText,MDSnackbarSupportingTe
 
 class UpdateApp(MDApp):
     def get_latest():
-
+        pass
     def check_for_updates(self):
         #req = UrlRequest(url, on_success, on_redirect, on_failure, on_error,
                         # on_progress, req_body, req_headers, chunk_size,
@@ -42,7 +42,7 @@ class UpdateApp(MDApp):
         Clock.schedule_once(lambda x:self.show_toast("Search Tokens Depleted","You probably run out off search tokens\nbut you can still paste video links to download videos"),2)
         self.check_for_updates()
     def build(self):
-        self.ui = Builder.load_file("update.kv")
+        self.ui = Builder.load_file("./ui/update.kv")
         self.title = "YouTubeXstream"
         return self.ui
 

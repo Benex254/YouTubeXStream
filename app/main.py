@@ -1,17 +1,28 @@
-from kivymd.icon_definitions import md_icons
-import sys
+import json
 import os
 os.environ["KIVY_VIDEO"] = "ffpyplayer"
+os.environ["KCFG_KIVY_WINDOW_ICON"] = "./data/logo.ico"
+# os.environ["KCFG_KIVY_LOG_ENABLE"] = "0"
 # os.environ["KIVY_NO_CONSOLELOG"] = "1"
+from dotenv import load_dotenv
+load_dotenv()
+import sys
+from kivy.resources import resource_add_path, resource_find
+
+resource_add_path(os.path.join("."))
+resource_add_path(os.path.join("./data"))
 from kivy.config import Config
 # Config.set("log_enable")
+Config.set('kivy', 'window_icon', resource_find("logo.ico"))
+Config.write()
+
+from kivymd.icon_definitions import md_icons
 from difflib import SequenceMatcher
 import socket
 from kivy.network.urlrequest import UrlRequest
 from kivy.storage.jsonstore import JsonStore
 from kivymd.uix.menu import MDDropdownMenu
-from kivy.uix.videoplayer import VideoPlayer
-from data import themes
+from data.data import themes
 from kivymd.uix.filemanager import MDFileManager
 from datetime import datetime
 import re
@@ -20,21 +31,28 @@ from kivymd.app import MDApp
 from kivymd.uix.snackbar import MDSnackbar,MDSnackbarText,MDSnackbarSupportingText,MDSnackbarButtonContainer,MDSnackbarCloseButton
 from kivymd.uix.recycleview import MDRecycleView
 from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.button import MDButton,MDButtonText,MDButtonIcon
+from kivymd.uix.dialog import (
+    MDDialog,
+    MDDialogIcon,
+    MDDialogHeadlineText,
+    MDDialogSupportingText,
+    MDDialogButtonContainer,
+    MDDialogContentContainer,
+)
+from kivymd.uix.divider import MDDivider
+
 from kivy.utils import format_bytes_to_human
 from kivy.lang import Builder
 from pytube import YouTube
 from kivy.clock import Clock,mainthread
 from kivy.properties import StringProperty,NumericProperty,ObjectProperty,DictProperty,BooleanProperty
 from threading import Thread
-from kivy.utils import QueryDict,platform
+from kivy.utils import QueryDict,platform,get_hex_from_color
 from queue import Queue
 from pyyoutube import Api
-import random
-import tempfile 
-from kivy.resources import resource_add_path, resource_find
-
-# get default videos dir
-
+from controllers.videoplayer import VideoPlayerX
+from datetime import datetime
 videos_dir = ""
 if platform == "win":
     videos_dir = os.path.join(os.environ.get("USERPROFILE"),"Videos")
@@ -43,23 +61,6 @@ elif platform == "macosx":
 else:
     videos_dir = os.path.join(os.environ.get("HOME"),"Videos")
 
-temp_dir = tempfile.TemporaryDirectory(delete=False)
-
-keys = [
-    "AIzaSyBygR7Oz_pQNayCVYLQKSmqyOpNcds11vk",
-    "AIzaSyBWiY9WwBV2u9lMXrnM-MlaLAezXHcl3WU",
-    "AIzaSyBWw2I3hiagIv9GaGBwLGKCr846ZSUQcCE",
-    "AIzaSyBlAPfHX22YO0Mh-svQky93vBwzhTdNEHU",
-    "AIzaSyCdhIfZoXfxU5yFCZrHgwNEUZHQE8dJmVg"
-]    
-api = Api(api_key=random.choice(keys))
-
-def check_for_updates():
-    #req = UrlRequest(url, on_success, on_redirect, on_failure, on_error,
-                    # on_progress, req_body, req_headers, chunk_size,
-                    # timeout, method, decode, debug, file_path, ca_file,
-                    # verify)
-    req = UrlRequest("htttps://")
 
 class VideoCard(MDBoxLayout):
     image_link = StringProperty("")
@@ -69,49 +70,151 @@ class VideoCard(MDBoxLayout):
     channel = StringProperty("")
     publishedAt = StringProperty("")
 
-class VideoPlayerCustom(VideoPlayer):
-    VIDS_PATH = os.path.join(videos_dir,"YoutubeX")
-    def _do_video_load(self,*largs):
-        super()._do_video_load(*largs)
-        self._video.bind(eos=self.next_video)
-        
-    def next_video(self,instance,*args):
-        app = MDApp.get_running_app()
-        try:
-            user_settings = JsonStore("user_settings.json")
-            next_video = user_settings.get("Video Preferences")["Auto_Next"] 
-        except Exception as e:
-            next_video = True
-        def _show(dt):
-
-            paths = [os.path.join(self.VIDS_PATH,video) for video in os.listdir(self.VIDS_PATH) if ".mp4" in video]
-            source = self.source
-            if source and next_video == True:
-                current_i = paths.index(source)
-                if current_i > -1 and current_i < (len(paths)-1):
-                    path = paths[(current_i+1)]
-                else:
-                    path = paths[0]
-                if path:
-                    # path= os.path.join(self.VIDS_PATH,path)
-                    self.source = path
-                    self.state = "play"
-        if os.path.exists(self.VIDS_PATH):
-            Clock.schedule_once(_show)
+class MDVideoPlayer(VideoPlayerX):
+    pass
 
 class SearchResults(MDRecycleView):
     pass
 
-class UpdateDialog():
-    pass
+
 class YouTubeApp(MDApp):
     path = StringProperty("")
     VIDS_PATH = os.path.join(videos_dir,"YoutubeX")
     queue = None
+    background_tasks = None
     jobs = NumericProperty()
     stream = ObjectProperty()
-    api = None
     is_online = BooleanProperty()
+    api = None
+    crash_text = ""
+    try:
+        store = JsonStore("user_settings.json") 
+        date = datetime.today().date()
+        api_key = store.get("user_credentials")["api_key"]
+        search_disabled = False
+        try:
+            rem_searches = store.get("search")[f"{date}"]
+        except Exception as e:
+            store.put("search",**{f"{date}":50})
+            rem_searches = store.get("search")[f"{date}"]
+    except:
+        api_key =""
+        rem_searches = 0
+        search_disabled = True
+    if not search_disabled:        
+        try:
+            api = Api(api_key=api_key)
+        except:
+            search_disabled = True
+    api_key = StringProperty(api_key)
+    rem_searches = NumericProperty(rem_searches)
+    def get_crash_text(self):
+        crashdump_path = resource_find("crashdump.txt")
+        no_crash = "[b][color=#00fa00]No crash so far[/color][/b]"
+        try:
+            if crashdump_path:
+                with open(crashdump_path,"r") as file:
+                    text = file.read()
+                    if text == "":
+                        return no_crash
+                    else:
+                        return text
+            else:
+                return no_crash
+        except:
+            return no_crash
+
+    def on_api_key(self,instance,value):
+        try:
+            self.api = Api(api_key=value)
+            self.search_disabled = False
+        except:
+            self.search_disabled = True
+    def on_rem_searches(self,instance,value):
+        try:
+            self.store.put("search",**{f"{self.date}":value})
+        except Exception as e:
+            pass
+    def check_for_updates(self):
+        req = UrlRequest("https://api.github.com/repos/bxw-855/YouTubeXStream/releases/latest",
+                         on_success=self.is_update,
+                         req_headers = {"User-Agent":"YouTubeXStream"}
+                         )
+
+    def is_update(self,request,online_release):
+        def _version_weight(tag_name):
+            version = tag_name[1:].split(".")
+            return int(version[0])*100+int(version[1])*10+int(version[2])
+        def get_my_release():
+            try:
+                with open(resource_find("release.json"),"r") as file:
+                    return json.loads(file.read())
+            except:
+                self.show_toast("Missing","Could not find release.json\nRecommend reinstalling app to inorder get updates")
+                return None
+        my_release = get_my_release()
+        if my_release:
+            try:
+                if _version_weight(online_release["tag_name"]) > _version_weight(my_release["tag_name"]):
+                    print("lets update?")
+            except Exception as e:
+                self.show_toast("Sth went wrong while checking for update",f"{e}\nRecommend reinstalling app to inorder get updates")
+                return None            
+
+    def update_dialog(self,data):
+            MDDialog(
+                # ----------------------------Icon-----------------------------
+                MDDialogIcon(
+                    icon="update",
+                ),
+                # -----------------------Headline text-------------------------
+                MDDialogHeadlineText(
+                    text="Would you like to update to the latest version?",
+                ),
+                # -----------------------Supporting text-----------------------
+                MDDialogSupportingText(
+                    text=f"This will close the app and launch the updater and then update the app to version {data["version"]}",
+                ),
+                # -----------------------Custom content------------------------
+                # MDDialogContentContainer(
+                #     MDDivider(),
+                    
+                #     MDDivider(),
+                #     orientation="vertical",
+                # ),
+                # ---------------------Button container------------------------
+                MDDialogButtonContainer(
+                    MDButton(
+                        MDButtonText(text="No Thanks"),
+                        style="text",
+                        on_press = lambda instance,*_: instance.parent.parent.parent.parent.dismiss()
+                    ),
+                    MDButton(
+                        MDButtonText(text="Yes Please"),
+                        style="text",
+                        on_press = self.update_app
+
+                    ),
+                    spacing="8dp",
+                ),
+                auto_dismiss = False
+                # -------------------------------------------------------------
+            ).open()
+    def update_app(self,*_):
+        self.stop()         
+        try:
+            os.execv(sys.executable,["python","updater.py"])
+        except Exception as e:
+            index = datetime.today()
+            error = f"[b][color=#fa0000][ {index} ]:[/color][/b]\n(\n\n{e}\n\n)\n"
+            try:
+                self.show_toast("Failed update",f"{e}")
+                with open("crashdump.txt","a") as file:
+                    file.write(error)
+            except:
+                with open("crashdump.txt","w") as file:
+                    file.write(error)
+
     def _isOnline(self,dt):
         self.is_online = self.isOnline()
     def isOnline(self):
@@ -126,15 +229,27 @@ class YouTubeApp(MDApp):
         if online:
             self.show_toast("Online","You are back online, you can now search and download :)")
             self.screen.ids.video_title.text ="You can now search and download"     
+            self.screen.ids.status_bar.md_bg_color = self.theme_cls.secondaryContainerColor
+
         else:
-            self.screen.ids.video_title.text = "[color=#ff0000]You are offline[/color][color=#00ff00]but can still watch downloads[/color]"
+            error_color = get_hex_from_color(self.theme_cls.errorColor)
+            self.screen.ids.status_bar.md_bg_color = self.theme_cls.errorContainerColor
+            self.screen.ids.video_title.text = f"[b][color={error_color}]You are offline[/color][/b]"
             self.show_toast("Ofline","You are offline, connect back to download and search\nbut you can still watch downloaded in downloads page  :(")
 
     def worker(self,queue):
         while True:
-            job = queue.get() # expects (link,quality)
+            job = queue.get() 
             self.download_video(*job)
             queue.task_done()
+    def bg_worker(self,queue):
+        while True:
+            job = queue.get() 
+            job()
+            queue.task_done()
+    def add_bg_task(self,task):
+        self.background_tasks.put(task)
+        
     @mainthread
     def on_download_progress(self,chunk,file_handler,bytes_rem):
         filesize = self.stream.filesize
@@ -170,13 +285,13 @@ class YouTubeApp(MDApp):
                     filesize = format_bytes_to_human(self.stream.filesize)
                     self.screen.ids.job_progress_label.text = f"{0}/{filesize}" 
                     self.screen.ids.video_title.text = self.stream.title
-                    self.stream.download(output_path=self.VIDS_PATH,filename_prefix=f"{self.stream.resolution}_{yt.author}_")
+                    self.stream.download(output_path=self.VIDS_PATH,filename_prefix=f"{yt.author}_")
             except Exception as e:
                 if self.stream:
                     self.show_toast("Download Failure",f"Cause: {e}")
                 self.reset_prev()
         else:
-            self.show_toast("Offline","Connect to the interneet to download videos\nbut you can still watch downloads")
+            self.show_toast("Offline","Connect to the interneet to download videos\nbut you can still watch downloaded videos")
     @mainthread
     def reset_prev(self):
         self.screen.ids.job_progress_label.text = ""
@@ -184,25 +299,32 @@ class YouTubeApp(MDApp):
         self.screen.ids.job_progress.value = 0
         self.jobs -= 1
         self.screen.ids.active_jobs.text = f"Jobs: {self.jobs}"
-
+    
     def on_start(self):
         super().on_start()
+        # for user activities
         self.queue = Queue()
         worker_thread = Thread(target=self.worker,args=(self.queue,))
         worker_thread.daemon = True
         worker_thread.start()
-        Clock.schedule_interval(self._isOnline,5)
+
+        # for bg activites
+        self.background_tasks = Queue()
+        bg_worker_thread = Thread(target=self.bg_worker,args=(self.background_tasks,))
+        bg_worker_thread.daemon = True
+        bg_worker_thread.start()
         self.is_online = self.isOnline()
-        if not self.is_online:
-            self.screen.ids.video_title.text = "[color=#ff0000]You are offline but you can still watch downloads[/color]"
-            self.show_toast("Offline","Connect to the internet to search and download videos")
-            
+        if self.is_online:
+            self.search_for_video(self.startup_search)
+            self.add_bg_task(self.check_for_updates)        
+
+        Clock.schedule_interval(self._isOnline,5)
     def on_jobs(self,*args):
         if self.jobs == 0:
             pass
 
     def search_for_video(self,query):
-        def _search(dt):
+        def _search():
             self.screen.ids.rv.data = []
             regex_pattern = r"^(https?:\/\/)?([\w\-]+(\.[\w\-]+)+)(:[0-9]+)?(\/[\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?$"
             try:
@@ -217,8 +339,8 @@ class YouTubeApp(MDApp):
                     "publishedAt": f"{yt.publish_date}"
                     } 
                     self.screen.ids.rv.data.append(data)
-                else:    
-                    results = api.search(q=query,count=10).items
+                elif not self.search_disabled and self.rem_searches>0:    
+                    results = self.api.search(q=query,count=10).items
                     matches = [QueryDict(result.to_dict()) for result in results]
                     if matches:
                         for match in matches:
@@ -234,19 +356,26 @@ class YouTubeApp(MDApp):
                             "publishedAt": published_at
                             } 
                             self.screen.ids.rv.data.append(data)
+                            
                     else:
                         self.show_toast("No result",f"Nothing has been found matching your query of\n{query}")
+                    self.rem_searches -= 1
+                    self.show_toast("Search",f"You are now remaining with {self.rem_searches} searches of your daily quota")
+                else:
+                    self.show_toast("Search",f"You haven`t configured a youtube api key in settings, for search to be enabled\nbut you can still paste links of videos in the search box to download youtube video of specified link\n or you reached your quota")
+                    
             except Exception as e:
                 self.show_toast("failed to search",f"Reason: {e}")
-                Clock.schedule_once(lambda x:self.show_toast("Search Tokens Depleted","You probably run out off search tokens\nbut you can still paste video links to download videos"),2)
+                Clock.schedule_once(lambda x:self.show_toast("Search Tokens Depleted","You probably run out off search tokens\nbut you can still paste video links to download videos"),5)
         if self.is_online:
-            Clock.schedule_once(_search,-1)
+            self.add_bg_task(_search)
         else:
             self.show_toast("Offline","connect to the internet to download and search videos")
 
     def build(self): 
         self.user_settings = JsonStore("user_settings.json")
-
+        if not os.path.exists(self.VIDS_PATH):
+            os.mkdir(self.VIDS_PATH)
         try:
             color = self.user_settings.get("theme")["color"]
             style = self.user_settings.get("theme")["style"]
@@ -257,10 +386,10 @@ class YouTubeApp(MDApp):
             style = "Dark"
             self.startup_search = "Anime Trailers" 
             self._next_video = True
+        self.crash_text = self.get_crash_text()
         self.theme_cls.primary_palette = color
         self.theme_cls.theme_style = style
-        self.search_for_video(self.startup_search)
-        self.screen = Builder.load_file("./main.kv")
+        self.screen = Builder.load_file("./ui/main.kv")
         self.title = "YouTubeXStream"
         return self.screen
 
@@ -288,8 +417,26 @@ class YouTubeApp(MDApp):
                 orientation="horizontal"
             ).open()
         Clock.schedule_once(_show)
-
-    def show_video(self,video:str,*args):
+    @mainthread
+    def _stream(self,video,stream):
+        self.screen.sm.current ="video_screen"
+        self.screen.ids.vid_player.source = stream.url
+        self.screen.ids.vid_player.video_title.text = video   
+        self.screen.ids.vid_player.state = "play"     
+    def stream_video(self,video,link):
+        if self.is_online:
+            try:
+                
+                yt = YouTube(link,on_complete_callback=None,on_progress_callback=None)
+                streams = yt.streams.filter(progressive=True,file_extension="mp4") #res [720p,480p,360p,240p,144p]
+                stream = streams[-1]
+                if stream:
+                    self.show_toast("Streaming",f"Now streaming {video}\nto watch it later and while offline download it")
+                    self._stream(video,stream)
+            except Exception as e:
+                self.show_toast("Stream Failure",f"Cause: {e}")
+        
+    def show_video(self,video:str,link,*args):
         # depracated
         def string_similarity(str1, str2):
             lcs_len = 0
@@ -304,8 +451,13 @@ class YouTubeApp(MDApp):
 
         def similar(a, b):
             return SequenceMatcher(None, a, b).ratio()
-        
-        def _show(dt):
+        @mainthread
+        def _update(path,video):        
+            self.screen.sm.current = "video_screen"
+            self.screen.ids.vid_player.source = path
+            self.screen.ids.vid_player.video_title.text = video
+            self.screen.ids.vid_player.state = "play"            
+        def _show():
             paths = os.listdir(self.VIDS_PATH)
 
             path = [(path,similar(video,path)) for path in paths if similar(video,path)>0.7]
@@ -313,17 +465,14 @@ class YouTubeApp(MDApp):
             if path:
                 path = max(path,key=lambda x: x[1])
                 path= os.path.join(self.VIDS_PATH,path[0])
-                self.screen.sm.current = "video_screen"
-                self.screen.ids.vid_player.source = path
-                self.screen.ids.vid_player.state = "play"
+                _update(path,video)
             else:
-                self.screen.sm.current = "video_screen"
-                self.show_toast("Not found","video has not been found.Try downloading it")
+                self.stream_video(video,link)
         if os.path.exists(self.VIDS_PATH):
-            Clock.schedule_once(_show)
+            self.add_bg_task(_show)
     
     def open_video_link(self,video_link,*args):
-        def _open(dt):
+        def _open():
             try:
                 result = subprocess.run(["start",video_link],shell=True,stdout=subprocess.PIPE)
                 if result.returncode == 0:
@@ -332,7 +481,7 @@ class YouTubeApp(MDApp):
                     self.show_toast("Failed",f"Could not open this link in browser {video_link}")
             except Exception as e:
                 self.show_toast("Failed",f"{e}")
-        Clock.schedule_once(_open)
+        self.add_bg_task(_open)
 
     def add_download_video_job(self,link,title,author,*args):
         def _add(dt):
@@ -348,7 +497,7 @@ class YouTubeApp(MDApp):
                     path = os.path.expanduser(self.VIDS_PATH)  
                     self.file_manager = MDFileManager(
                     exit_manager=self.exit_manager,
-                    ext=[".mp4"],
+                    ext=[".mp4",".mp3"],
                     select_path=self.select_path,  
                     )
                     self.file_manager.show(path)
@@ -363,6 +512,8 @@ class YouTubeApp(MDApp):
     def select_path(self,path,*args):
         self.screen.sm.current = "video_screen"
         self.screen.ids.vid_player.source = path
+        self.screen.ids.vid_player.video_title.text = os.path.basename(path)
+        
         self.screen.ids.nav_drawer.set_state("toggle")
         self.screen.ids.vid_player.state = "play"
         self.file_manager.close()
@@ -407,6 +558,14 @@ class YouTubeApp(MDApp):
             self.user_settings.put("Video Preferences",Auto_Next=instance.active)
         except Exception as e:
             self.show_toast("Failed Settings Update",f"{e}")
+    def update_api_key(self,instance,*_):
+        try:
+            self.user_settings.put("user_credentials",api_key=instance.text)
+            self.api_key = instance.text
+            self.api = Api(api_key=self.api_key)
+        except Exception as e:
+            self.search_disabled = True
+            self.show_toast("Failed Settings Update",f"{e}")
 
 if __name__ == '__main__':
     try:
@@ -414,7 +573,11 @@ if __name__ == '__main__':
             resource_add_path(os.path.join(sys._MEIPASS))
         YouTubeApp().run()
     except Exception as e:
-        print(e)
-        input("Press enter.")
-
-
+        index = datetime.today()
+        error = f"[b][color=#fa0000][ {index} ]:[/color][/b]\n(\n\n{e}\n\n)\n"
+        try:
+            with open("crashdump.txt","a") as file:
+                file.write(error)
+        except:
+            with open("crashdump.txt","w") as file:
+                file.write(error)

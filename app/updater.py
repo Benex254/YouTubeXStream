@@ -1,5 +1,6 @@
 import sys
 from kivymd.app import MDApp
+from datetime import datetime
 from kivy.network.urlrequest import UrlRequest
 from kivy.clock import Clock
 from kivy.lang import Builder
@@ -74,7 +75,17 @@ class UpdateApp(MDApp):
         return jobs
     
     def download(self,name,url,totalsize):
-        req = UrlRequest(url, self.downloaded_resource,self.download_redirect, self.download_failure, self.download_error,self.download_progress)
+        req = UrlRequest(url,
+                         self.downloaded_resource,
+                         self.download_redirect,
+                         self.download_failure,
+                         self.download_error,
+                         self.download_progress,
+                         req_headers={
+                             "User-Agent":"YouTubeXStream"
+                         }
+
+                         )
         self.url = url
         self.name = name
         self.totalsize = totalsize
@@ -130,12 +141,44 @@ class UpdateApp(MDApp):
             style = "Dark"
         self.theme_cls.primary_palette = color
         self.theme_cls.theme_style = style
-        self.ui = Builder.load_file("update.kv")
+        self.ui = Builder.load_file("./ui/update.kv")
         self.ui.transition = FadeTransition()
         self.title = "YouTubeXstream"
         return self.ui
-    def on_stop(self,*args):
-        super().on_stop(*args)
-        os.execv(sys.executable,["python","main.py"])
+
+        # try:
+        #     os.execv(sys.executable,["python","main.py", "Failed_Update", f"{index}"])
+        # except Exception as e:
+        #     index = datetime.today()
+        #     error = f"[b][color=#fa0000][ {index}@updater ]:[/color][/b]\n(\n\n{e}\n\n)\n"
+        #     try:
+        #         with open("crashdump.txt","a") as file:
+        #             file.write(error)
+        #     except:
+        #         with open("crashdump.txt","w") as file:
+        #             file.write(error)        
+
 if __name__ == "__main__":
-    UpdateApp().run()
+    try:
+        UpdateApp().run()
+    
+    except Exception as e:
+        index = datetime.today()
+        error = f"[b][color=#fa0000][ {index}@updater ]:[/color][/b]\n(\n\n{e}\n\n)\n"
+        try:
+            with open("crashdump.txt","a") as file:
+                file.write(error)
+        except:
+            with open("crashdump.txt","w") as file:
+                file.write(error)
+        try:
+            os.execv(sys.executable,["python","main.py", "Failed_Update", f"\"{index}\""])
+        except Exception as e:
+            index = datetime.today()
+            error = f"[b][color=#fa0000][ {index}@updater ]:[/color][/b]\n(\n\n{e}\n\n)\n"
+            try:
+                with open("crashdump.txt","a") as file:
+                    file.write(error)
+            except:
+                with open("crashdump.txt","w") as file:
+                    file.write(error)

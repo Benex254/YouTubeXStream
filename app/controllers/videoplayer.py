@@ -221,12 +221,8 @@ class VideoPlayerX(FocusBehavior,MDFloatLayout):
             window.show_cursor = False
         Clock.schedule_once(_hide,2)
     def on_source(self,instance,value):
-        if ".mp3" in value:
-            # self.video_ = SoundLoader.load(value)
-            pass
-            # self.video_.play()
-        elif ".mp4" in value:
-            self.video.source = value
+
+        self.video.source = value
         
     def on_videos_dir(self,app,value):
         if os.path.exists(value):

@@ -64,7 +64,10 @@
 
         MDIconButton:
             icon:"download"
-            on_press:app.add_download_video_job(root.video_link,root.title,root.channel)
+            on_press:app.open_menu(self,"download_type")
+            video_link:root.video_link
+            video_title:root.title
+            video_channel:root.channel
 
     
         MDIconButton:

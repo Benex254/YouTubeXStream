@@ -62,6 +62,20 @@ elif platform == "macosx":
 else:
     videos_dir = os.path.join(os.environ.get("HOME"),"Videos")
 
+import subprocess
+
+def merge_image_with_audio(image_path, audio_path, output_path):
+    command = [
+        'ffmpeg',
+        '-loop', '1',
+        '-i', image_path,
+        '-i', audio_path,
+        '-c:v', 'libx264',
+        '-c:a', 'copy',
+        '-shortest',
+        output_path
+    ]
+    subprocess.run(command)
 
 class VideoCard(MDBoxLayout):
     image_link = StringProperty("")
@@ -157,7 +171,7 @@ class YouTubeApp(MDApp):
         if my_release:
             try:
                 if _version_weight(online_release["tag_name"]) > _version_weight(my_release["tag_name"]):
-                    print("lets update?")
+                    self.update_dialog({"version":online_release["tag_name"]})
             except Exception as e:
                 self.show_toast("Sth went wrong while checking for update",f"{e}\nRecommend reinstalling app to inorder get updates")
                 return None            
@@ -241,7 +255,7 @@ class YouTubeApp(MDApp):
     def worker(self,queue):
         while True:
             job = queue.get() 
-            self.download_video(*job)
+            job()
             queue.task_done()
     def bg_worker(self,queue):
         while True:
@@ -261,13 +275,30 @@ class YouTubeApp(MDApp):
 
 
     @mainthread
-    def on_download_complete(self,stream,file_path):
-        def _completed(dt):
+    def on_download_complete(self,stream,file_path,audio):
+        def _completed_audio(file_path):
+            try:
+                self.show_toast("Audio Processing","trying to convert to audio :)")
+                new_filename = "A" + os.path.basename(file_path)
+                new_path = os.path.join(self.VIDS_PATH,new_filename)
+                merge_image_with_audio(resource_find("video_preview.jpeg"), file_path, new_path)
+                os.remove(file_path)
+                file_path = new_path
+            except Exception as e:
+                self.show_toast("Failure",f"{e}\nBut original exists at {file_path}")
+            self.reset_prev()
+            self.show_toast(title=f"Success: Download and processing Completed",details=f"At {file_path}")
+            if self.screen.ids.vid_player.source == ""  and not os.path.exists(self.screen.ids.vid_player.source) :
+               self.screen.ids.vid_player.source = file_path 
+        def _completed_video(file_path):
             self.reset_prev()
             self.show_toast(title=f"Success: Download Completed",details=f"At {file_path}")
             if self.screen.ids.vid_player.source == ""  and not os.path.exists(self.screen.ids.vid_player.source) :
                self.screen.ids.vid_player.source = file_path 
-        Clock.schedule_once(_completed)
+        if audio:
+            self.queue.put(lambda:_completed_audio(file_path))
+        else:
+            Clock.schedule_once(lambda _:_completed_video(file_path))
 
     @mainthread
     def on_stream(self,*args):
@@ -275,21 +306,28 @@ class YouTubeApp(MDApp):
             self.show_toast("New Download started",f"Downloading {self.stream.title}")
         Clock.schedule_once(_download_started)            
 
-    def download_video(self,link,title):
+    def download_video(self,link,audio):
         if self.is_online:
             try:
                 self.screen.ids.job_progress_label.text = "starting..."
-                yt = YouTube(link,on_progress_callback=self.on_download_progress,on_complete_callback=self.on_download_complete)
-                streams = yt.streams.filter(progressive=True,file_extension="mp4") #res [720p,480p,360p,240p,144p]
+                yt = YouTube(link,on_progress_callback=self.on_download_progress,on_complete_callback=lambda *args:self.on_download_complete(*args,audio))
+                if audio:
+                    streams = yt.streams.filter(only_audio=True,file_extension="mp4") 
+                    prefix= ""
+                else:
+                    streams = yt.streams.filter(progressive=True,file_extension="mp4") 
+                    prefix= "V"
+                    
                 self.stream = streams[-1]
                 if self.stream:
                     filesize = format_bytes_to_human(self.stream.filesize)
                     self.screen.ids.job_progress_label.text = f"{0}/{filesize}" 
                     self.screen.ids.video_title.text = self.stream.title
-                    self.stream.download(output_path=self.VIDS_PATH,filename_prefix=f"{yt.author}_")
+                    self.stream.download(output_path=self.VIDS_PATH,filename_prefix=f"{prefix}_{yt.author}_")
+                else:
+                    self.show_toast("Missing",f"Could not find video or audi matching {link}\ntry downloading another format")
             except Exception as e:
-                if self.stream:
-                    self.show_toast("Download Failure",f"Cause: {e}")
+                self.show_toast("Download Failure",f"Cause: {e}")
                 self.reset_prev()
         else:
             self.show_toast("Offline","Connect to the interneet to download videos\nbut you can still watch downloaded videos")
@@ -317,7 +355,15 @@ class YouTubeApp(MDApp):
         self.is_online = self.isOnline()
         if self.is_online:
             self.search_for_video(self.startup_search)
-            self.add_bg_task(self.check_for_updates)        
+            if len(sys.argv) > 1:
+                arg1 = sys.argv[1]
+                arg2 = sys.argv[2]
+                if arg1 == "Failed_Update":
+                    self.show_toast("Failed Update",f"Check crush dump entry:\n[ {arg2}@updater ]\n for details")
+                else:
+                    self.add_bg_task(self.check_for_updates)        
+            else:
+                self.add_bg_task(self.check_for_updates)        
 
         Clock.schedule_interval(self._isOnline,5)
     def on_jobs(self,*args):
@@ -374,6 +420,7 @@ class YouTubeApp(MDApp):
             self.show_toast("Offline","connect to the internet to download and search videos")
 
     def build(self): 
+        
         self.user_settings = JsonStore("user_settings.json")
         if not os.path.exists(self.VIDS_PATH):
             os.mkdir(self.VIDS_PATH)
@@ -410,7 +457,7 @@ class YouTubeApp(MDApp):
                     ),
                     pos_hint={"center_y":.5}
                 ),
-                duration = 3,
+                duration = 5,
                 y="10dp",
                 pos_hint = {"right":0.99},
                 size_hint_x = .4,
@@ -461,7 +508,7 @@ class YouTubeApp(MDApp):
         def _show():
             paths = os.listdir(self.VIDS_PATH)
 
-            path = [(path,similar(video,path)) for path in paths if similar(video,path)>0.7]
+            path = [(path,similar(video,path)) for path in paths if similar(video,path)>0.5]
 
             if path:
                 path = max(path,key=lambda x: x[1])
@@ -484,21 +531,13 @@ class YouTubeApp(MDApp):
                 self.show_toast("Failed",f"{e}")
         self.add_bg_task(_open)
 
-    def add_download_video_job(self,link,title,author,*args):
-        def _add(dt):
-            self.queue.put((link,title))
-            self.jobs += 1 
-            self.screen.ids.active_jobs.text = f"Jobs: {self.jobs}"
-            self.show_toast("Success: New job added",f"{title}\nby @{author}")
-        Clock.schedule_once(_add)
-
     def show_vids_folder(self):
             try:
                 if os.path.exists(self.VIDS_PATH):
                     path = os.path.expanduser(self.VIDS_PATH)  
                     self.file_manager = MDFileManager(
                     exit_manager=self.exit_manager,
-                    ext=[".mp4",".mp3"],
+                    ext=[".mp4"],
                     select_path=self.select_path,  
                     )
                     self.file_manager.show(path)
@@ -534,8 +573,31 @@ class YouTubeApp(MDApp):
                     "on_release": lambda x=theme: self.theme_style_menu_callback(x),
                 } for theme in ["Dark","Light"]
             ]
+        elif name=="download_type":
+            menu_items = [
+                {
+                    "text": f"{download_type}",
+                    "on_release": lambda x=download_type: self.download_type_menu_callback(item,x),
+                } for download_type in ["Video","Audio Only"]
+            ]
         MDDropdownMenu(caller=item, items=menu_items).open()
 
+    def download_type_menu_callback(self,instance,download_type):
+        link = instance.video_link
+        author = instance.video_channel
+        title = instance.video_title
+        if download_type == "Video":
+            audio = False
+        else:
+            audio = True
+        def _add(dt):
+            job = lambda audio=audio,link=link: self.download_video(link,audio)
+            self.queue.put(job)
+            self.jobs += 1 
+            self.screen.ids.active_jobs.text = f"Jobs: {self.jobs}"
+            self.show_toast("Success: New job added",f"{title}\nby @{author}")
+        Clock.schedule_once(_add)
+            
     def theme_color_menu_callback(self,color,*args):
         try:
             self.theme_cls.primary_palette = color
@@ -564,6 +626,7 @@ class YouTubeApp(MDApp):
             self.user_settings.put("user_credentials",api_key=instance.text)
             self.api_key = instance.text
             self.api = Api(api_key=self.api_key)
+            self.search_disabled = False
         except Exception as e:
             self.search_disabled = True
             self.show_toast("Failed Settings Update",f"{e}")
@@ -575,7 +638,7 @@ if __name__ == '__main__':
         YouTubeApp().run()
     except Exception as e:
         index = datetime.today()
-        error = f"[b][color=#fa0000][ {index} ]:[/color][/b]\n(\n\n{e}\n\n)\n"
+        error = f"[b][color=#fa0000][ {index}@main ]:[/color][/b]\n(\n\n{e}\n\n)\n"
         try:
             with open("crashdump.txt","a") as file:
                 file.write(error)

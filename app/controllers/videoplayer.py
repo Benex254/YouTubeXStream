@@ -1,12 +1,10 @@
 import os
-from kivymd.app import MDApp
+# from kivymd.app import MDApp
 # from kivy.core.audio import SoundLoader
-
 from kivy.uix.behaviors import FocusBehavior
 from kivy.metrics import dp
 from kivy.utils import platform
 from kivymd.uix.floatlayout import MDFloatLayout
-from kivy.core.audio import SoundLoader
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.behaviors import HoverBehavior
@@ -16,9 +14,7 @@ from kivymd.uix.fitimage import FitImage
 from kivy.core.video import Video as CoreVideo
 from kivy.animation import Animation
 from kivy.resources import resource_find,resource_add_path
-from kivy.properties import (BooleanProperty, NumericProperty, ObjectProperty,
-                             OptionProperty, StringProperty,ListProperty)
-
+from kivy.properties import (BooleanProperty, NumericProperty, ObjectProperty,OptionProperty, StringProperty,ListProperty)
 from kivy.lang import Builder
 
 
@@ -26,14 +22,14 @@ with open(
     os.path.join("ui","videoplayer.kv"), encoding="utf-8"
 ) as kv_file:
     Builder.load_string(kv_file.read())
-# time.strftime()
-videos_dir = ""
-if platform == "win":
-    videos_dir = os.path.join(os.environ.get("USERPROFILE"),"Videos")
-elif platform == "macosx":
-    videos_dir = os.path.join(os.environ.get("HOME"),"Movies")
-else:
-    videos_dir = os.path.join(os.environ.get("HOME"),"Videos")
+# # time.strftime()
+# videos_dir = ""
+# if platform == "win":
+#     videos_dir = os.path.join(os.environ.get("USERPROFILE"),"Videos")
+# elif platform == "macosx":
+#     videos_dir = os.path.join(os.environ.get("HOME"),"Movies")
+# else:
+#     videos_dir = os.path.join(os.environ.get("HOME"),"Videos")
 
 resource_add_path(os.path.join("."))
 resource_add_path(os.path.join("./data"))
@@ -348,13 +344,13 @@ class VideoPlayerX(FocusBehavior,MDFloatLayout):
             self.current_video = filenames.index(filename)
         except:
             pass
-class VideoApp(MDApp):
-    def build(self):
-        self.theme_cls.primary_pallete = "Pink"
-        self.theme_cls.theme_style = "Dark"
-        # self.ui = Builder.load_file("../ui/videoplayer.kv")
-        ui = VideoPlayerX()
-        return ui
+# class VideoApp(MDApp):
+#     def build(self):
+#         self.theme_cls.primary_pallete = "Pink"
+#         self.theme_cls.theme_style = "Dark"
+#         # self.ui = Builder.load_file("../ui/videoplayer.kv")
+#         ui = VideoPlayerX()
+#         return ui
 
-if __name__ == "__main__":
-    VideoApp().run()
+# if __name__ == "__main__":
+#     VideoApp().run()

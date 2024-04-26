@@ -195,3 +195,27 @@ cannot access local variable 'file_path' where it is not associated with a value
 [Errno 2] No such file or directory: './ui/.update.kv'
 
 )
+[b][color=#fa0000][ 2024-04-26 19:11:38.093132@updater ]:[/color][/b]
+(
+
+'super' object has no attribute '__getattr__'
+
+)
+[b][color=#fa0000][ 2024-04-26 23:46:03.371066@updater ]:[/color][/b]
+(
+
+expected str, bytes or os.PathLike object, not NoneType
+
+)
+[b][color=#fa0000][ 2024-04-27 00:12:34.552801@updater ]:[/color][/b]
+(
+
+'NoneType' object is not iterable
+
+)
+[b][color=#fa0000][ 2024-04-27 00:16:52.486379@updater ]:[/color][/b]
+(
+
+'NoneType' object is not iterable
+
+)

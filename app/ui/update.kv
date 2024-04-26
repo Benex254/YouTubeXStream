@@ -1,4 +1,8 @@
 #: import FadeTransition kivy.uix.screenmanager.FadeTransition
+#:set app_name "YouTubeXStream Updater"
+<MDLabel>
+    allow_copy:True
+    allow_selection:True
 
 ScreenManager:
     transition:FadeTransition()
@@ -16,11 +20,11 @@ ScreenManager:
                 MDTopAppBarLeadingButtonContainer:
                     MDActionTopAppBarButton:
                         icon: "menu"
-                        on_press:
-                            root.current = "completed_screen"
+                        # on_press:
+                        #     root.current = "completed_screen"
     
                 MDTopAppBarTitle:
-                    text: "YouTubeXStream Updater"
+                    text: app_name
                     pos_hint:{"center_x":.5}
                 MDTopAppBarTrailingButtonContainer:
                     MDActionTopAppBarButton:
@@ -34,29 +38,62 @@ ScreenManager:
                     pos_hint: {"center_y": .5,"center_x":.5}
                     size_hint: None, None
                     style: "elevated"
-                    size:"450dp","400dp"
+                    size:"550dp","300dp"
                     MDLabel:
-                        text:"Downloading Assets"
+                        id:title
+                        text:"Updating"
                         font_style:"Title"
                         role:"large"
                         halign:"center"
                         adaptive_height:True
 
                     MDBoxLayout:
+                        pading:"10dp"
+                        orientation: 'vertical'
+                        adaptive_height:True
+                        MDBoxLayout:
+                            adaptive_height:True
+                            spacing:"20dp"
+                            FitImage:
+                                id:author_avatar
+                                size_hint:None,None
+                                size:"50dp","50dp"
+                                radius:[50]
+                            MDLabel:
+                                color:self.theme_cls.secondaryColor
+                                adaptive_height:True
+                                # halign:"right"
+                                id:author_insta
+                                pos_hint:{"center_y":.5}
+                                text:"by @Benex254"
+                        # MDBoxLayout: 
+                        #     adaptive_height:True
+                        #     MDLabel:
+                        #         text:"repo url:"
+                        #         color:self.theme_cls.secondaryColor
+                        #         adaptive_size:True
+                        #     MDLabel:
+                        #         color:self.theme_cls.secondaryColor
+                        #         adaptive_size:True
+                        #         id:author_repo_url
+                        #         text:""
+                        
                     MDBoxLayout:
-                        orientation:"horizontal"
+                    MDBoxLayout:
+                        orientation:"vertical"
                         spacing:"10dp"
                         size_hint_y: None
                         height: "40dp"                
                         MDLinearProgressIndicator:
                             id:update_progress
-                            size_hint_x:.9
-                            value:50
+                            size_hint_x:1
+                            value:0
                             pos_hint:{"center_y":.5}
                             size_hint_y: None
                             height: "30dp"           
                         MDLabel:
-                            text:"100mb/1gb"
+                            id:update_progress_label
+                            text:"Initializing..."
                             font_style:"Label"
                             role:"small"
                             pos_hint:{"center_y":.5}
@@ -66,9 +103,18 @@ ScreenManager:
                         adaptive_height:True
                         spacing:"10dp"
                         MDLabel:
-                            text:"current file"
-                            adaptive_height:True
-    MDScreen: 
+                            id:job_type
+                            text:"Downloading:"
+                            adaptive_size:True
+                            font_style:"Label"
+                            role:"medium"
+                        MDLabel:
+                            id:asset
+                            font_style:"Label"
+                            role:"small"
+                            text:""
+                            
+    MDScreen:           
         name:"completed_screen"
         MDBoxLayout:
             orientation: 'vertical'
@@ -82,10 +128,10 @@ ScreenManager:
                 MDTopAppBarLeadingButtonContainer:
                     MDActionTopAppBarButton:
                         icon: "menu"
-                        on_press:
-                            root.current = "main_screen"
+                        # on_press:
+                        #     root.current = "main_screen"
                 MDTopAppBarTitle:
-                    text: "YouTubeXStream Updater"
+                    text: app_name
                     pos_hint:{"center_x":.5}
                 MDTopAppBarTrailingButtonContainer:
                     MDActionTopAppBarButton:
@@ -101,7 +147,8 @@ ScreenManager:
                     style: "elevated"
                     size:"450dp","400dp"
                     MDLabel:
-                        text:"Download complete.\nYou can now close this window"
+                        id:update_result
+                        text:""
                         font_style:"Title"
                         role:"large"
                         halign:"center"

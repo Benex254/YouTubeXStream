@@ -1,21 +1,20 @@
 import json
 import os
+from utils import write_crash
 os.environ["KIVY_VIDEO"] = "ffpyplayer"
-os.environ["KCFG_KIVY_WINDOW_ICON"] = "./data/logo.ico"
-# os.environ["KCFG_KIVY_LOG_ENABLE"] = "0"
-# os.environ["KIVY_NO_CONSOLELOG"] = "1"
+# os.environ["KCFG_KIVY_WINDOW_ICON"] = "./logo.ico"
+os.environ["KCFG_KIVY_LOG_ENABLE"] = "0"
+os.environ["KIVY_NO_CONSOLELOG"] = "1"
 from dotenv import load_dotenv
 load_dotenv()
 import sys
+from kivy.config import Config
+Config.set('kivy', 'window_icon', "logo.ico")
+Config.write()
 from kivy.resources import resource_add_path, resource_find
-
 resource_add_path(os.path.join("."))
 resource_add_path(os.path.join("./data"))
-from kivy.config import Config
 # Config.set("log_enable")
-Config.set('kivy', 'window_icon', resource_find("logo.ico"))
-Config.write()
-
 from kivymd.icon_definitions import md_icons
 from difflib import SequenceMatcher
 import socket
@@ -39,10 +38,9 @@ from kivymd.uix.dialog import (
     MDDialogHeadlineText,
     MDDialogSupportingText,
     MDDialogButtonContainer,
-    MDDialogContentContainer,
+    # MDDialogContentContainer,
 )
-from kivymd.uix.divider import MDDivider
-
+# from kivymd.uix.divider import MDDivider
 from kivy.utils import format_bytes_to_human
 from kivy.lang import Builder
 from pytube import YouTube
@@ -218,17 +216,10 @@ class YouTubeApp(MDApp):
     def update_app(self,*_):
         self.stop()         
         try:
-            os.execv(sys.executable,["python","updater.py"])
+            subprocess.call(resource_find("updater.exe"))
         except Exception as e:
-            index = datetime.today()
-            error = f"[b][color=#fa0000][ {index} ]:[/color][/b]\n(\n\n{e}\n\n)\n"
-            try:
-                self.show_toast("Failed update",f"{e}")
-                with open("crashdump.txt","a") as file:
-                    file.write(error)
-            except:
-                with open("crashdump.txt","w") as file:
-                    file.write(error)
+            self.show_toast("Failed update",f"{e}")
+            index = write_crash(e)
 
     def _isOnline(self,dt):
         self.is_online = self.isOnline()
@@ -453,7 +444,8 @@ class YouTubeApp(MDApp):
                 ),
                 MDSnackbarButtonContainer(
                     MDSnackbarCloseButton(
-                        icon="close"
+                        icon="close",
+                        on_press=lambda instance,*_:instance.parent.parent.dismiss()
                     ),
                     pos_hint={"center_y":.5}
                 ),
@@ -637,11 +629,4 @@ if __name__ == '__main__':
             resource_add_path(os.path.join(sys._MEIPASS))
         YouTubeApp().run()
     except Exception as e:
-        index = datetime.today()
-        error = f"[b][color=#fa0000][ {index}@main ]:[/color][/b]\n(\n\n{e}\n\n)\n"
-        try:
-            with open("crashdump.txt","a") as file:
-                file.write(error)
-        except:
-            with open("crashdump.txt","w") as file:
-                file.write(error)
+        index = write_crash(e)

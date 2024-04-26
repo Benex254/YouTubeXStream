@@ -1,22 +1,110 @@
-MDScreen:
-    name:"video_screen"
-    MDBoxLayout:
-        orientation: 'vertical'
-        md_bg_color: self.theme_cls.backgroundColor
-        MDTopAppBar:
-            id:v_app_bar
-            type: "small" 
-            size_hint_x: .95 
-            theme_color:"custom"
-            pos_hint: {"center_x": .5} 
-            MDTopAppBarLeadingButtonContainer:
-                MDActionTopAppBarButton:
-                    icon: "menu"
-                    on_press: 
-                        root.sm.current = "main_screen"
-            MDTopAppBarTitle:
-                text: "YouTubeXStream"
-                pos_hint:{"center_x":.5}
-            MDTopAppBarTrailingButtonContainer:
-                MDActionTopAppBarButton:
-                    icon: "account-circle"
+#: import FadeTransition kivy.uix.screenmanager.FadeTransition
+
+ScreenManager:
+    transition:FadeTransition()
+    MDScreen:
+        name:"main_screen"
+        MDBoxLayout:
+            orientation: 'vertical'
+            md_bg_color: self.theme_cls.backgroundColor
+            MDTopAppBar:
+                id:v_app_bar
+                type: "small" 
+                size_hint_x: .95 
+                theme_color:"custom"
+                pos_hint: {"center_x": .5} 
+                MDTopAppBarLeadingButtonContainer:
+                    MDActionTopAppBarButton:
+                        icon: "menu"
+                        on_press:
+                            root.current = "completed_screen"
+    
+                MDTopAppBarTitle:
+                    text: "YouTubeXStream Updater"
+                    pos_hint:{"center_x":.5}
+                MDTopAppBarTrailingButtonContainer:
+                    MDActionTopAppBarButton:
+                        icon: "account-circle"
+            MDFloatLayout:
+                size_hint:.95,1
+                MDCard:
+                    orientation: 'vertical'
+                    spacing:"10dp"
+                    padding: "10dp"
+                    pos_hint: {"center_y": .5,"center_x":.5}
+                    size_hint: None, None
+                    style: "elevated"
+                    size:"450dp","400dp"
+                    MDLabel:
+                        text:"Downloading Assets"
+                        font_style:"Title"
+                        role:"large"
+                        halign:"center"
+                        adaptive_height:True
+
+                    MDBoxLayout:
+                    MDBoxLayout:
+                        orientation:"horizontal"
+                        spacing:"10dp"
+                        size_hint_y: None
+                        height: "40dp"                
+                        MDLinearProgressIndicator:
+                            id:update_progress
+                            size_hint_x:.9
+                            value:50
+                            pos_hint:{"center_y":.5}
+                            size_hint_y: None
+                            height: "30dp"           
+                        MDLabel:
+                            text:"100mb/1gb"
+                            font_style:"Label"
+                            role:"small"
+                            pos_hint:{"center_y":.5}
+                            adaptive_size:True
+                    MDBoxLayout:
+                    MDBoxLayout:
+                        adaptive_height:True
+                        spacing:"10dp"
+                        MDLabel:
+                            text:"current file"
+                            adaptive_height:True
+    MDScreen: 
+        name:"completed_screen"
+        MDBoxLayout:
+            orientation: 'vertical'
+            md_bg_color: self.theme_cls.backgroundColor
+            MDTopAppBar:
+                id:v_app_bar
+                type: "small" 
+                size_hint_x: .95 
+                theme_color:"custom"
+                pos_hint: {"center_x": .5} 
+                MDTopAppBarLeadingButtonContainer:
+                    MDActionTopAppBarButton:
+                        icon: "menu"
+                        on_press:
+                            root.current = "main_screen"
+                MDTopAppBarTitle:
+                    text: "YouTubeXStream Updater"
+                    pos_hint:{"center_x":.5}
+                MDTopAppBarTrailingButtonContainer:
+                    MDActionTopAppBarButton:
+                        icon: "account-circle"
+            MDFloatLayout:
+                size_hint:.95,1
+                MDCard:
+                    orientation: 'vertical'
+                    spacing:"10dp"
+                    padding: "10dp"
+                    pos_hint: {"center_y": .5,"center_x":.5}
+                    size_hint: None, None
+                    style: "elevated"
+                    size:"450dp","400dp"
+                    MDLabel:
+                        text:"Download complete.\nYou can now close this window"
+                        font_style:"Title"
+                        role:"large"
+                        halign:"center"
+                        # adaptive_height:True
+
+             

@@ -5,8 +5,8 @@ os.environ["KIVY_VIDEO"] = "ffpyplayer"
 # os.environ["KCFG_KIVY_WINDOW_ICON"] = "./logo.ico"
 os.environ["KCFG_KIVY_LOG_ENABLE"] = "0"
 os.environ["KIVY_NO_CONSOLELOG"] = "1"
-from dotenv import load_dotenv
-load_dotenv()
+# from dotenv import load_dotenv
+# load_dotenv()
 import sys
 from kivy.config import Config
 Config.set('kivy', 'window_icon', "logo.ico")
@@ -411,7 +411,10 @@ class YouTubeApp(MDApp):
             self.show_toast("Offline","connect to the internet to download and search videos")
 
     def build(self): 
-        
+        if resource_find("logo.png"):
+            self.icon = resource_find("logo.png")
+
+        Builder.load_file("./ui/videoplayer.kv")
         self.user_settings = JsonStore("user_settings.json")
         if not os.path.exists(self.VIDS_PATH):
             os.mkdir(self.VIDS_PATH)
@@ -423,12 +426,14 @@ class YouTubeApp(MDApp):
         except Exception as e:
             color = "Silver"
             style = "Dark"
-            self.startup_search = "Anime Trailers" 
+            self.startup_search = "https://www.youtube.com/watch?v=LLAZUTbc97I" 
             self._next_video = True
         self.crash_text = self.get_crash_text()
         self.theme_cls.primary_palette = color
         self.theme_cls.theme_style = style
         self.screen = Builder.load_file("./ui/main.kv")
+        if self.screen.ids.vid_player.video.preview == None:
+            self.screen.ids.vid_player.video.preview = resource_find("video_preview.jpeg")
         self.title = "YouTubeXStream"
         return self.screen
 
@@ -500,7 +505,7 @@ class YouTubeApp(MDApp):
         def _show():
             paths = os.listdir(self.VIDS_PATH)
 
-            path = [(path,similar(video,path)) for path in paths if similar(video,path)>0.5]
+            path = [(path,similar(video,path)) for path in paths if similar(video,path)>0.8]
 
             if path:
                 path = max(path,key=lambda x: x[1])

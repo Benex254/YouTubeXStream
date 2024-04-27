@@ -1,6 +1,10 @@
+from kivy.config import Config
+Config.set('kivy', 'window_icon', "logo.ico")
+Config.write()
 import json
 import subprocess
 import sys
+from kivymd.icon_definitions import md_icons
 from kivymd.app import MDApp
 from kivy.clock import Clock,mainthread
 from kivy.lang import Builder
@@ -9,7 +13,7 @@ from kivy.properties import NumericProperty,ListProperty
 from kivy.utils import format_bytes_to_human
 from queue import Queue
 from threading import Thread
-from kivy.resources import resource_find
+from kivy.resources import resource_find,resource_add_path
 import tempfile
 import os
 import requests
@@ -129,6 +133,7 @@ class UpdateApp(MDApp):
 
     def build(self):
         self.user_settings = JsonStore("user_settings.json")
+        self.icon = "logo.png"
         try:
             color = self.user_settings.get("theme")["color"]
             style = self.user_settings.get("theme")["style"]
@@ -140,16 +145,11 @@ class UpdateApp(MDApp):
         self.ui = Builder.load_file("./ui/update.kv")
         self.title = app_name
         return self.ui
-
-    def on_stop(self,*args):
-        super(UpdateApp,self).on_stop(*args)
-        try:
-            subprocess.call(resource_find("YouTubeXStream.exe"))
-        except Exception as e:
-            index = write_crash(e)
                    
 if __name__ == "__main__":
-    try:
+    try:        
+        if hasattr(sys, '_MEIPASS'):
+            resource_add_path(os.path.join(sys._MEIPASS))
         UpdateApp().run()
     except Exception as e:
         index =  write_crash(e)

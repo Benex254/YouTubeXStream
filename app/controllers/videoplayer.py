@@ -1,8 +1,10 @@
+import sys
 import os
 # from kivymd.app import MDApp
 # from kivy.core.audio import SoundLoader
 from kivy.uix.behaviors import FocusBehavior
 from kivy.metrics import dp
+from kivy.core.window import WindowBase
 from kivy.utils import platform
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -15,14 +17,16 @@ from kivy.core.video import Video as CoreVideo
 from kivy.animation import Animation
 from kivy.resources import resource_find,resource_add_path
 from kivy.properties import (BooleanProperty, NumericProperty, ObjectProperty,OptionProperty, StringProperty,ListProperty)
-from kivy.lang import Builder
+# from kivy.lang import Builder
 
-
-with open(
-    os.path.join("ui","videoplayer.kv"), encoding="utf-8"
-) as kv_file:
-    Builder.load_string(kv_file.read())
-# # time.strftime()
+resource_add_path("../")
+resource_add_path(".")
+resource_add_path("./data")
+resource_add_path("./ui")
+# with open(os.path.join("controllers","./videoplayer.kv"), encoding="utf-8"
+# ) as kv_file:
+#     Builder.load_string(kv_file.read())
+# # # time.strftime()
 # videos_dir = ""
 # if platform == "win":
 #     videos_dir = os.path.join(os.environ.get("USERPROFILE"),"Videos")
@@ -30,9 +34,8 @@ with open(
 #     videos_dir = os.path.join(os.environ.get("HOME"),"Movies")
 # else:
 #     videos_dir = os.path.join(os.environ.get("HOME"),"Videos")
-
-resource_add_path(os.path.join("."))
-resource_add_path(os.path.join("./data"))
+if hasattr(sys, '_MEIPASS'):
+    resource_add_path(os.path.join(sys._MEIPASS))
 class MDVideo(FitImage):
     _preview_path = resource_find("video_preview.jpeg")
     preview = StringProperty(_preview_path, allownone=True)
@@ -269,17 +272,19 @@ class VideoPlayerX(FocusBehavior,MDFloatLayout):
         return super(VideoPlayerX, self).on_touch_down(touch)
         
     def on_fullscreen(self, instance, value):
-        window = self.get_parent_window()
+        window:WindowBase = self.get_parent_window()
         if not window:
             
             if value:
                 self.fullscreen = False
                 window.fullscreen = False
+                window.restore()
             return
         if not self.parent:
             if value:
                 self.fullscreen = False
-                window.fullscreen = False
+                window.fullscreen = False                
+                window.restore()
 
             return
 
@@ -298,6 +303,7 @@ class VideoPlayerX(FocusBehavior,MDFloatLayout):
 
             # put the video in fullscreen
             if state['parent'] is not window:
+                window.maximize()
                 window.fullscreen = True
 
                 state['parent'].remove_widget(self)

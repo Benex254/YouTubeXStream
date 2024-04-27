@@ -1,4 +1,5 @@
 #: import FadeTransition kivy.uix.screenmanager.FadeTransition
+#: import subprocess subprocess
 #:set app_name "YouTubeXStream Updater"
 <MDLabel>
     allow_copy:True
@@ -152,6 +153,16 @@ ScreenManager:
                         font_style:"Title"
                         role:"large"
                         halign:"center"
+                        # adaptive_height:True
+                    MDButton:
+                        id:update_btn
+                        pos_hint: {'center_x': 0.5,'center_y': 0.5}
+                        on_press:
+                            app.stop()
+                            subprocess.call("YouTubeXStream.exe")
+                        MDButtonText:
+                            text:"Close"
+
                         # adaptive_height:True
 
              
